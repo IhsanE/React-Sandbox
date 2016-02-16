@@ -1,0 +1,4 @@
+1. npm install
+2. sudo mongod
+3. node server.js
+4. Navigate to http://localhost:3000 on your browser (Preferably Chrome)
