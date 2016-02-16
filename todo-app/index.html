@@ -2,6 +2,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Hello React</title>
+    <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
     <script src="https://fb.me/react-0.14.5.js"></script>
     <script src="https://fb.me/react-dom-0.14.5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
@@ -14,19 +15,30 @@
     </div>
 </div>
 <script type="text/babel">
-var o1 = {id:0 + "example task #1", txt:"example task #1"};
+var APP = {};
 
 var TasksTODO = React.createClass({
   getInitialState: function() {
-    return ({
-        todos: [o1],
-        completed: []
-    });
+      var a = [];
+        return ({
+            todos: a,
+            completed: []
+        });
+  },
+  componentWillMount: function(){
+      $.get('/getTODOTasks', function (result) {
+          this.setState({
+              todos: result
+          });
+      }.bind(this));
   },
   handleClick: function (event){
       for (var item in this.state.todos){
           if (this.state.todos[item].id == event.target.id){
               this.state.completed.push(this.state.todos[item]);
+              $.post( "/moveToCompleted", {"key" : event.target.id})
+                .done(function( data ) {
+                });
               this.state.todos.splice(item, 1);
           }
       }
@@ -34,16 +46,26 @@ var TasksTODO = React.createClass({
           completed: this.state.completed,
           todos: this.state.todos
       });
+      $(APP).trigger('done');
   },
   handleRemoveAll: function (event){
+      for (var item in this.state.todos){
+          $.post( "/moveToCompleted", {"key" : this.state.todos[item].id})
+            .done(function( data ) {
+            });
+      }
       this.setState({
           todos: []
       });
+      $(APP).trigger('done');
   },
   handleKeyPress: function (event){
       if(event.charCode==13){
             var newObj = {id: this.state.todos.length + this.myTextInput.value, txt: this.myTextInput.value};
             this.state.todos.push(newObj);
+            $.post( "/insertTask", {"key" : newObj.id, "txt": newObj.txt})
+              .done(function( data ) {
+              });
             this.setState({
                 todos: this.state.todos
             });
@@ -57,7 +79,7 @@ var TasksTODO = React.createClass({
             <div className="todolist not-done">
                 <h1>Todos</h1>
 
-                <div id="sortable" class="list-unstyled">
+                <div id="sortable" className="list-unstyled">
         <input
             type="text"
             onKeyPress={this.handleKeyPress}
@@ -84,7 +106,7 @@ var TasksTODO = React.createClass({
         </div>
         <div className="todo-footer">
             <strong>
-                <span className="count-todos"></span>
+                <span className="count-todos">{this.state.todos.length}</span>
             </strong> Items Left
         </div>
     </div>
@@ -92,35 +114,58 @@ var TasksTODO = React.createClass({
 <div className="col-md-6" id="place-done-list">
     <TasksDONE ul={this.state.completed}/>
 </div>
-</div>
-
-    );
+</div>);
 }
 });
-
 var TasksDONE = React.createClass({
     getInitialState: function() {
-        this.serverRequest = $.get('/getCompletedTasks', function (result) {
-      var lastGist = result[0];
-      this.setState({
-        username: lastGist.owner.login,
-        lastGistUrl: lastGist.html_url
-      });
-    }.bind(this));
-      return ({
-          completed: [o1]
-      });
+        return ({
+            completed: []
+        });
+    },
+    componentWillMount: function(){
+        $.get('/getCompletedTasks', function (result) {
+            this.setState({
+                completed: result
+            });
+        }.bind(this));
+
+        $(APP).on('done', function(e){
+            $.get('/getCompletedTasks', function (result) {
+                this.setState({
+                    completed: result
+                });
+            }.bind(this));
+        }.bind(this));
+    },
+    handleClick: function (event){
+        for (var item in this.state.completed){
+            if (this.state.completed[item].id == event.target.id){
+                $.post( "/deleteTask", {"key" : event.target.id})
+                  .done(function( data ) {
+                  });
+                this.state.completed.splice(item, 1);
+            }
+        }
+        this.setState({
+            completed: this.state.completed,
+            todos: this.state.todos
+        });
     },
     render: function() {
         return(
             <div className="todolist">
              <h1>Already Done</h1>
-                <ul id="done-items" class="list-unstyled">
+                <ul id="done-items" className="list-unstyled">
                     {this.state.completed.map(function(result) {
-                       return <li key={result.id}>result.txt
+                       return <li key={result.id}>{result.txt}
                            <button
-                               className="remove-item btn btn-default btn-xs pull-right">
-                                   <span className="glyphicon glyphicon-remove"></span>
+                               className="remove-item btn btn-default btn-xs pull-right"
+                               id={result.id}
+                               onClick={this.handleClick}>
+                                   <span className="glyphicon glyphicon-remove"
+                                   id={result.id}
+                                   onClick={this.handleClick}></span>
                            </button>
                        </li>;
                    }, this)}
@@ -129,8 +174,6 @@ var TasksDONE = React.createClass({
         );
     }
 });
-
-
 ReactDOM.render(
   <TasksTODO/>,
   document.getElementById('row')
