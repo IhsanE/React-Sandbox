@@ -1,0 +1,140 @@
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Hello React</title>
+    <script src="https://fb.me/react-0.14.5.js"></script>
+    <script src="https://fb.me/react-dom-0.14.5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<div class="container">
+    <div class="row" id="row">
+    </div>
+</div>
+<script type="text/babel">
+var o1 = {id:0 + "example task #1", txt:"example task #1"};
+
+var TasksTODO = React.createClass({
+  getInitialState: function() {
+    return ({
+        todos: [o1],
+        completed: []
+    });
+  },
+  handleClick: function (event){
+      for (var item in this.state.todos){
+          if (this.state.todos[item].id == event.target.id){
+              this.state.completed.push(this.state.todos[item]);
+              this.state.todos.splice(item, 1);
+          }
+      }
+      this.setState({
+          completed: this.state.completed,
+          todos: this.state.todos
+      });
+  },
+  handleRemoveAll: function (event){
+      this.setState({
+          todos: []
+      });
+  },
+  handleKeyPress: function (event){
+      if(event.charCode==13){
+            var newObj = {id: this.state.todos.length + this.myTextInput.value, txt: this.myTextInput.value};
+            this.state.todos.push(newObj);
+            this.setState({
+                todos: this.state.todos
+            });
+            this.myTextInput.value = '';
+    }
+  },
+  render: function() {
+    return (
+        <div>
+        <div className="col-md-6">
+            <div className="todolist not-done">
+                <h1>Todos</h1>
+
+                <div id="sortable" class="list-unstyled">
+        <input
+            type="text"
+            onKeyPress={this.handleKeyPress}
+            type="text" className="form-control add-todo"
+            placeholder="Add todo" ref={(ref) => this.myTextInput = ref}
+        />
+        <ul className="list-unstyled">
+            {this.state.todos.map(function(result) {
+               return <li key={result.id} className="ui-state-default">
+                   <div className="checkbox">
+                       <label>
+                           <input type="checkbox" id={result.id} onClick={this.handleClick}/>
+                           {result.txt}
+                       </label>
+                   </div>
+               </li>;
+           }, this)}
+        </ul>
+        <button
+            id="checkAll"
+            className="btn btn-success"
+            onClick={this.handleRemoveAll}>Mark all as done</button>
+
+        </div>
+        <div className="todo-footer">
+            <strong>
+                <span className="count-todos"></span>
+            </strong> Items Left
+        </div>
+    </div>
+</div>
+<div className="col-md-6" id="place-done-list">
+    <TasksDONE ul={this.state.completed}/>
+</div>
+</div>
+
+    );
+}
+});
+
+var TasksDONE = React.createClass({
+    getInitialState: function() {
+        this.serverRequest = $.get('/getCompletedTasks', function (result) {
+      var lastGist = result[0];
+      this.setState({
+        username: lastGist.owner.login,
+        lastGistUrl: lastGist.html_url
+      });
+    }.bind(this));
+      return ({
+          completed: [o1]
+      });
+    },
+    render: function() {
+        return(
+            <div className="todolist">
+             <h1>Already Done</h1>
+                <ul id="done-items" class="list-unstyled">
+                    {this.state.completed.map(function(result) {
+                       return <li key={result.id}>result.txt
+                           <button
+                               className="remove-item btn btn-default btn-xs pull-right">
+                                   <span className="glyphicon glyphicon-remove"></span>
+                           </button>
+                       </li>;
+                   }, this)}
+                </ul>
+            </div>
+        );
+    }
+});
+
+
+ReactDOM.render(
+  <TasksTODO/>,
+  document.getElementById('row')
+);
+</script>
+</body>
+</html>

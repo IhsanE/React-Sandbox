@@ -15,7 +15,8 @@
 
     var LikeButton = React.createClass({
       getInitialState: function() {
-        return {liked: false};
+        return {liked: false,
+                something: 1};
       },
       handleClick: function(event) {
         this.setState({liked: !this.state.liked});
@@ -24,14 +25,14 @@
         var text = this.state.liked ? 'like' : 'haven\'t liked';
         return (
           <p onClick={this.handleClick}>
-            You {text} this. Click to toggle.
+            You {text} {this.state.something} this. Click to toggle.
           </p>
         );
       }
     });
 
     ReactDOM.render(
-      <LikeButton />,
+      <LikeButton/>,
       document.getElementById('example')
     );
 
