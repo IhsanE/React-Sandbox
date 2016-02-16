@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Hello React</title>
+    <title>TODO-React</title>
     <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
     <script src="https://fb.me/react-0.14.5.js"></script>
     <script src="https://fb.me/react-dom-0.14.5.js"></script>
@@ -15,16 +15,27 @@
     </div>
 </div>
 <script type="text/babel">
+// Babel is a cross compiler for JS which allows you to type new versions of JS and have it work on
+// older browsers which can't compile newer version of JS with their built in compilers.
+
+
+// Global variable dictionary
+// Event emitter between REACT COMPONENTS
 var APP = {};
 
+// React Component;
+// List of tasks
 var TasksTODO = React.createClass({
+
+  // Initial list of tasks
   getInitialState: function() {
-      var a = [];
         return ({
-            todos: a,
-            completed: []
+            todos: []
         });
   },
+
+  // When the component is mounted by the DOM (right before it's rendered)
+  // we fire a GET request to initialize our array with server side data
   componentWillMount: function(){
       $.get('/getTODOTasks', function (result) {
           this.setState({
@@ -32,24 +43,39 @@ var TasksTODO = React.createClass({
           });
       }.bind(this));
   },
+
+  // Clicking on the tasks remove them from the todo list, plcacing them in the done list
+  // We remove them from our current state, persist in server, then SIGNAL the other React Component
   handleClick: function (event){
+      // Iterate through react tasks to find the one which was clicked
       for (var item in this.state.todos){
+          // We attached the task key to our checkbox id (this is why keys are IMPORTANT!!)
           if (this.state.todos[item].id == event.target.id){
-              this.state.completed.push(this.state.todos[item]);
+              // POST to server to persist changes of task -> completed
               $.post( "/moveToCompleted", {"key" : event.target.id})
                 .done(function( data ) {
                 });
+              // Remove the task from our todo list
               this.state.todos.splice(item, 1);
           }
       }
+      // Move from this state to our next state (a state without this completed task)
       this.setState({
-          completed: this.state.completed,
           todos: this.state.todos
       });
+
+      // SIGNAL the other React Component (TasksDone) that we've sent it a new completed task
       $(APP).trigger('done');
   },
+
+  // Event fire when we click "Mark all as done"
   handleRemoveAll: function (event){
+
+      // Iterate through each task and mark them as completed
       for (var item in this.state.todos){
+          // Fire a post request for each job
+          // ** DO NOT do this in production, incredibly slow
+          // ** This is only done for demonstration purposes as an example of a poor RESTful call
           $.post( "/moveToCompleted", {"key" : this.state.todos[item].id})
             .done(function( data ) {
             });
@@ -57,15 +83,26 @@ var TasksTODO = React.createClass({
       this.setState({
           todos: []
       });
+
+      // SIGNAL the other React Component (TasksDone) that we've sent it new completed tasks
       $(APP).trigger('done');
   },
+
+  // Event fire when adding an event to the list
   handleKeyPress: function (event){
       if(event.charCode==13){
+            // Create an object to represent our task
             var newObj = {id: this.state.todos.length + this.myTextInput.value, txt: this.myTextInput.value};
+
+            // Add the task to our current list of tasks
             this.state.todos.push(newObj);
+
+            // Persist task insert by POSTING to the server
             $.post( "/insertTask", {"key" : newObj.id, "txt": newObj.txt})
               .done(function( data ) {
               });
+
+            // Change states
             this.setState({
                 todos: this.state.todos
             });
@@ -73,6 +110,8 @@ var TasksTODO = React.createClass({
     }
   },
   render: function() {
+
+    // Render our list of tasks
     return (
         <div>
         <div className="col-md-6">
@@ -117,19 +156,26 @@ var TasksTODO = React.createClass({
 </div>);
 }
 });
+
+// List of completed tasks
 var TasksDONE = React.createClass({
     getInitialState: function() {
         return ({
             completed: []
         });
     },
+
+    // Event handler for receiving completed tasks
     componentWillMount: function(){
+
+        // Get a list of completed tasks from the server ON LOAD
         $.get('/getCompletedTasks', function (result) {
             this.setState({
                 completed: result
             });
         }.bind(this));
 
+        // Get a list of completed tasks when TasksTODO SIGNALS
         $(APP).on('done', function(e){
             $.get('/getCompletedTasks', function (result) {
                 this.setState({
@@ -138,7 +184,11 @@ var TasksDONE = React.createClass({
             }.bind(this));
         }.bind(this));
     },
+
+    // Remove task when clicked
     handleClick: function (event){
+
+        // Find the clicked task in our list of tasks
         for (var item in this.state.completed){
             if (this.state.completed[item].id == event.target.id){
                 $.post( "/deleteTask", {"key" : event.target.id})
@@ -148,11 +198,11 @@ var TasksDONE = React.createClass({
             }
         }
         this.setState({
-            completed: this.state.completed,
-            todos: this.state.todos
+            completed: this.state.completed
         });
     },
     render: function() {
+        // Renders our list of completed tasks
         return(
             <div className="todolist">
              <h1>Already Done</h1>
@@ -174,6 +224,8 @@ var TasksDONE = React.createClass({
         );
     }
 });
+
+// Render our react components within the html DOM
 ReactDOM.render(
   <TasksTODO/>,
   document.getElementById('row')

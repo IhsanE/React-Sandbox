@@ -1,0 +1,120 @@
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>TODO-React</title>
+    <script src="https://fb.me/react-0.14.5.js"></script>
+    <script src="https://fb.me/react-dom-0.14.5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="row" id="row">
+        <div class="col-md-6 col-md-offset-3">
+            <div class="todolist not-done">
+                <h1>Todos</h1>
+                <div id="sortable" class="list-unstyled">
+                    <!-- ***REACT COMPONENTS ARE RENDERED HERE*** -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/babel">
+// Default first item since we're not persisting data with a server/db
+var o1 = {id:0 + "example task #1", txt:"example task #1"};
+
+// TasksTODO Component
+var TasksTODO = React.createClass({
+  getInitialState: function() {
+      var a = [];
+        return ({
+            todos: a,
+            completed: []
+        });
+  },
+  handleClick: function (event){
+      // Iterate through our tasks to find the one that was clicked
+      for (var item in this.state.todos){
+          if (this.state.todos[item].id == event.target.id){
+              this.state.completed.push(this.state.todos[item]);
+              this.state.todos.splice(item, 1);
+          }
+      }
+      // Persist our changes client side
+      this.setState({
+          completed: this.state.completed,
+          todos: this.state.todos
+      });
+  },
+
+  handleRemoveAll: function (event){
+      this.setState({
+          todos: []
+      });
+
+  },
+  handleKeyPress: function (event){
+      // Pressed enter key
+      if(event.charCode==13){
+
+            // To make the key unique, we concatinate it
+            // Keys have to be unique otherwise React complains
+            var newObj = {id: this.state.todos.length + this.myTextInput.value, txt: this.myTextInput.value};
+            this.state.todos.push(newObj);
+
+            // React is a FSM, we have to CHANGE state, this is done by using setState
+            this.setState({
+                todos: this.state.todos
+            });
+
+            // Reset input value to nothing
+            this.myTextInput.value = '';
+    }
+  },
+  render: function() {
+    return (
+        <div>
+
+        <input
+            type="text"
+            onKeyPress={this.handleKeyPress}
+            type="text" className="form-control add-todo"
+            placeholder="Add todo" ref={(ref) => this.myTextInput = ref}
+        />
+        <ul className="list-unstyled">
+            {this.state.todos.map(function(result) {
+               return <li key={result.id} className="ui-state-default">
+                   <div className="checkbox">
+                       <label>
+                           <input type="checkbox" id={result.id} onClick={this.handleClick}/>
+                           {result.txt}
+                       </label>
+                   </div>
+               </li>;
+           }, this)}
+        </ul>
+        <button
+            id="checkAll"
+            className="btn btn-success"
+            onClick={this.handleRemoveAll}>Mark all as done</button>
+            <div className="todo-footer">
+                <strong>
+                    <span className="count-todos">{this.state.todos.length}</span>
+                </strong> Items Left
+            </div>
+</div>);
+}
+});
+
+// Render the react component within html template
+ReactDOM.render(
+  <TasksTODO/>,
+  document.getElementById('sortable')
+);
+</script>
+</body>
+</html>
